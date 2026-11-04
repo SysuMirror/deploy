@@ -1,0 +1,17 @@
+# 勿把运行时数据打进镜像（dist 必须进镜像，勿忽略）
+data
+work
+uploads
+*.db
+*.db-*
+.env
+.env.*
+!.env.example
+node_modules
+src
+scripts
+.git
+*.md
+.dockerignore
+tsconfig.json
+.tsbuildinfo

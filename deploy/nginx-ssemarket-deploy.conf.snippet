@@ -1,0 +1,39 @@
+# deploy.ssemarket.cn — SSE Deploy 子域入口
+# 须 include 在公共 nginx 的 http {} 内（与 modules-hosts 并列），
+# 或使用独立 server {} 块（推荐，见下方完整示例）。
+#
+# 前置：DNS deploy.ssemarket.cn → 公共 nginx；泛域名证书 *.ssemarket.cn
+# 静态：/opt/release-sdpy/web-deploy/（base=/ 构建产物）
+# API：宿主机 sdpy-api :3002
+
+server {
+    listen 443 ssl http2;
+    server_name deploy.ssemarket.cn;
+
+    # 与主站共用证书路径（按现网调整）
+    ssl_certificate     /etc/letsencrypt/live/ssemarket.cn/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/ssemarket.cn/privkey.pem;
+
+    client_max_body_size 200m;
+
+    location /api/ {
+        proxy_pass http://host.docker.internal:3002/api/;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_buffering off;
+        proxy_read_timeout 3600s;
+    }
+
+    location = /api {
+        return 301 /api/;
+    }
+
+    location / {
+        root /opt/release-sdpy/web-deploy;
+        try_files $uri $uri/ /index.html;
+        add_header Cache-Control "no-cache";
+    }
+}

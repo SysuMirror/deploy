@@ -1,0 +1,5 @@
+# Placeholder — deploy-api 部署成功后会覆盖为真实 modules.conf
+# map $http_upgrade $connection_upgrade {
+#   default upgrade;
+#   '' close;
+# }

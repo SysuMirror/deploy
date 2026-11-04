@@ -1,0 +1,17 @@
+{
+  "name": "sse-deploy",
+  "private": true,
+  "workspaces": [
+    "../packages/sse-ui",
+    "apps/*"
+  ],
+  "scripts": {
+    "dev:api": "npm run dev -w deploy-api",
+    "dev:web": "npm run dev -w deploy-web",
+    "build:ui": "npm run build -w @sse/ui",
+    "build:api": "npm run build -w deploy-api",
+    "build:web": "npm run build -w deploy-web",
+    "build:web-deploy": "npm run build -w deploy-web -- --mode production.deploy",
+    "build": "npm run build:ui && npm run build:web && npm run build:api"
+  }
+}

@@ -1,0 +1,23 @@
+services:
+  web:
+    build:
+      context: ./frontend
+      args:
+        VITE_API_BASE: ${SDPY_API_PUBLIC_URL}
+    ports:
+      # 勿绑 127.0.0.1：公共 nginx 在 Docker 内经 host.docker.internal 访问宿主机端口
+      - "${WEB_HOST_PORT}:80"
+    environment:
+      SDPY_ENV: ${SDPY_ENV}
+      SDPY_MODULE: ${SDPY_MODULE}
+
+  api:
+    build:
+      context: ./backend
+    ports:
+      - "${API_HOST_PORT}:3000"
+    environment:
+      SDPY_ENV: ${SDPY_ENV}
+      SDPY_MODULE: ${SDPY_MODULE}
+      PORT: "3000"
+      PUBLIC_BASE: ${SDPY_API_PUBLIC_BASE}

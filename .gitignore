@@ -1,0 +1,32 @@
+node_modules/
+.npm-cache/
+dist/
+data/
+work/
+.env
+.env.*
+!.env.example
+!apps/deploy-api/DATA.md
+*.env.bak
+deploy/oauth/credentials/
+*.db
+*.db-*
+# 构建产物（由 npm run build 生成）
+apps/deploy-web/dist-deploy/
+apps/deploy-api/public/**
+!apps/deploy-api/public/.gitkeep
+deploy/gateway/html/**
+!deploy/gateway/html/.gitkeep
+# 上机发布包（本地打包产物，不进源码仓）
+release-sdpy/
+scripts/
+
+# TS 增量编译缓存（每次构建都会变，不该进版本库）
+*.tsbuildinfo
+
+# 备份与本地杂项
+*.bak*
+._*
+.DS_Store
+__pycache__/
+*.log

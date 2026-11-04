@@ -1,0 +1,50 @@
+# SSE Deploy 平台一键启动：API + 网关
+# 数据全部在宿主机 SDPY_HOST_DATA 下，rebuild 不丢。
+#
+#   export SDPY_HOST_DATA="$(cd .. && pwd)"   # 仓库根绝对路径
+#   docker compose up -d --build
+
+services:
+  api:
+    build:
+      context: ../apps/deploy-api
+      dockerfile: Dockerfile
+    container_name: sdpy-api
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:3002:3002"
+    env_file:
+      - ../apps/deploy-api/.env
+    environment:
+      PORT: "3002"
+      NODE_ENV: production
+      SDPY_HOST_DATA: ${SDPY_HOST_DATA:?请设置 SDPY_HOST_DATA=仓库根绝对路径}
+      DEPLOY_DATA_DIR: ${SDPY_HOST_DATA}/apps/deploy-api/data
+      WORK_DIR: ${SDPY_HOST_DATA}/apps/deploy-api/data/work
+      BASE_DOMAIN: ${BASE_DOMAIN:-ssemarket.cn}
+      PUBLIC_BASE_PATH: ${PUBLIC_BASE_PATH:-/}
+      GATEWAY_RELOAD_CMD: docker exec sdpy-gateway nginx -s reload
+      GATEWAY_UPSTREAM_HOST: host.docker.internal
+      MODULE_DATA_ROOT: ${MODULE_DATA_ROOT:-/root/SSE_Market/sse-sdpy/data}
+    volumes:
+      - ${SDPY_HOST_DATA:?请设置 SDPY_HOST_DATA}:${SDPY_HOST_DATA:?请设置 SDPY_HOST_DATA}
+      - ${SDPY_HOST_DATA}/apps/deploy-api/data:${SDPY_HOST_DATA}/apps/deploy-api/data
+      - ${MODULE_DATA_ROOT:-/root/SSE_Market/sse-sdpy/data}:${MODULE_DATA_ROOT:-/root/SSE_Market/sse-sdpy/data}
+      - /var/run/docker.sock:/var/run/docker.sock
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  gateway:
+    image: docker.m.daocloud.io/library/nginx:alpine
+    container_name: sdpy-gateway
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8088:8088"
+    volumes:
+      - ./gateway/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ${SDPY_HOST_DATA}/apps/deploy-api/data/nginx/modules.conf:/etc/nginx/modules.conf:ro
+      - ./gateway/html:/usr/share/nginx/sdpy:ro
+    depends_on:
+      - api
+    extra_hosts:
+      - "host.docker.internal:host-gateway"

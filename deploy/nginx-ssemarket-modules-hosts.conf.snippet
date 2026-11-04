@@ -1,0 +1,20 @@
+# SSE Deploy — Host 级模块路由（子域名 / 自定义域名）
+#
+# 放入公共 nginx 的 **http {}** 内（与 cloud.ssemarket.cn / sso 的 server 并列），
+# 不要塞进主站 ssemarket.cn 的 server {}。
+#
+# 路径与 deploy-api 写入一致，例：
+#   include /root/SSE_Market/sse-sdpy/api/data/nginx/modules-hosts.conf;
+#
+# 前置：
+# 1. DNS：*.ssemarket.cn 泛解析到入口机
+# 2. TLS：证书 SAN 含 *.ssemarket.cn（与主站同一 fullchain.pem）
+# 3. 自定义域名：CNAME 到入口；证书须覆盖该名（否则浏览器报错）
+
+# ↓↓↓ 现网已接线（SSE_market_server/compose.yml + nginx_proxy/nginx.conf）↓↓↓
+# volume:
+#   modules-hosts.conf → /etc/nginx/sdpy-modules-hosts.conf
+# custom.conf http{}:
+#   include /etc/nginx/sdpy-modules-hosts.conf;
+
+include /etc/nginx/sdpy-modules-hosts.conf;

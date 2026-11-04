@@ -1,0 +1,53 @@
+# 后端独立启动（数据全部在宿主机，rebuild 不丢）
+#
+# 1. 在 .env 设置绝对路径，例如：
+#      SDPY_HOST_DATA=/opt/release-sdpy/api
+# 2. 数据统一落在：
+#      ${SDPY_HOST_DATA}/data/deploy.db
+#      ${SDPY_HOST_DATA}/data/uploads/
+#      ${SDPY_HOST_DATA}/data/work/
+#      ${SDPY_HOST_DATA}/data/nginx/modules.conf
+# 3. 启动：
+#      docker compose up -d --build
+#
+# 注意：DEPLOY_DATA_DIR / WORK_DIR 必须与宿主机路径一致（经 docker.sock
+# 部署用户模块时，守护进程按宿主机路径找 build 上下文）。
+
+services:
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: sdpy-api
+    restart: unless-stopped
+    ports:
+      - "3002:3002"
+    env_file:
+      - .env
+    environment:
+      PORT: "3002"
+      NODE_ENV: production
+      # 透传宿主机根，供 entrypoint 校验挂载
+      SDPY_HOST_DATA: ${SDPY_HOST_DATA:?请在 .env 设置 SDPY_HOST_DATA=本目录绝对路径}
+      # 全部持久化数据目录（容器外）
+      DEPLOY_DATA_DIR: ${SDPY_HOST_DATA}/data
+      WORK_DIR: ${SDPY_HOST_DATA}/data/work
+      BASE_DOMAIN: ${BASE_DOMAIN:-ssemarket.cn}
+      PUBLIC_BASE_PATH: ${PUBLIC_BASE_PATH:-/sdpy}
+      GATEWAY_UPSTREAM_HOST: ${GATEWAY_UPSTREAM_HOST:-host.docker.internal}
+      GATEWAY_RELOAD_CMD: ${GATEWAY_RELOAD_CMD:-nginx -s reload}
+      # 用户模块数据：/root/SSE_Market/sse-sdpy/data/{模块名}/{test|prod} → 容器 /data
+      MODULE_DATA_ROOT: ${MODULE_DATA_ROOT:-/root/SSE_Market/sse-sdpy/data}
+    volumes:
+      # 整棵发布目录按「同名路径」挂进容器，保证路径与宿主机一致
+      - ${SDPY_HOST_DATA:?请在 .env 设置 SDPY_HOST_DATA=本目录绝对路径}:${SDPY_HOST_DATA:?请在 .env 设置 SDPY_HOST_DATA=本目录绝对路径}
+      # 显式再挂 data，强调持久化边界（与上一行同路径，安全冗余）
+      - ${SDPY_HOST_DATA}/data:${SDPY_HOST_DATA}/data
+      # 运行时 dist 必须挂到 /app/dist，否则 rebuild 镜像后仍跑镜像内旧 JS
+      - ${SDPY_HOST_DATA}/dist:/app/dist
+      - ${MODULE_DATA_ROOT:-/root/SSE_Market/sse-sdpy/data}:${MODULE_DATA_ROOT:-/root/SSE_Market/sse-sdpy/data}
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /usr/bin/docker:/usr/bin/docker:ro
+      - /usr/libexec/docker/cli-plugins:/usr/libexec/docker/cli-plugins:ro
+    extra_hosts:
+      - "host.docker.internal:host-gateway"

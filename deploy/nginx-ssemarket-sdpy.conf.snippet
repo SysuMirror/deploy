@@ -1,0 +1,36 @@
+# SSE Deploy — 公共 nginx（前端静态 + API + 用户模块路由）
+# 并进 ssemarket 站点 server {} 后 reload。
+#
+# 【关键】modules.conf 路径必须与 deploy-api 实际写入路径一致！
+# 以部署日志为准，例如：
+#   已更新平台网关模块路由: /root/SSE_Market/sse-sdpy/api/data/nginx/modules.conf
+# 若 include 仍指向 /opt/release-sdpy/... 而 API 写到别的目录，则 /image、/sdpy/{模块}
+# 都不会生效，请求会落到站点根（博客等）。
+#
+# 根路径模式：modules.conf 生成 location /{模块}/ → frp 或本机端口
+# /sdpy 前缀模式：生成 /sdpy/{模块}/ …
+
+    location /sdpy-api/ {
+      proxy_pass http://host.docker.internal:3002/api/;
+      proxy_http_version 1.1;
+      proxy_set_header Host $host;
+      proxy_set_header X-Real-IP $remote_addr;
+      proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+      proxy_set_header X-Forwarded-Proto $scheme;
+      proxy_buffering off;
+      proxy_read_timeout 3600s;
+      client_max_body_size 200m;
+    }
+
+    location = /sdpy-api { return 301 /sdpy-api/; }
+
+    # ↓↓↓ 改成与部署日志「已更新平台网关模块路由」同一绝对路径 ↓↓↓
+    include /root/SSE_Market/sse-sdpy/api/data/nginx/modules.conf;
+
+    location = /sdpy { return 301 /sdpy/; }
+
+    location /sdpy/ {
+      alias /opt/release-sdpy/web/;
+      try_files $uri $uri/ /sdpy/index.html;
+      add_header Cache-Control "no-cache";
+    }

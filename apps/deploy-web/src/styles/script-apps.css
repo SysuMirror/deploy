@@ -1,0 +1,237 @@
+/* SSE Deploy — 脚本应用（非部署台应用）共用样式
+ *
+ * 「脚本部署」拆成列表页 / 详情页 / 编辑弹窗 / 运行抽屉四个组件后，
+ * 徽标、面板、小按钮、输入框这几类原子件会被多个组件同时用到。
+ * Vue 的 scoped 样式没法跨组件复用，写在这里做全局。
+ *
+ * 统一加 sa- 前缀（script app）：
+ *   项目里 .panel / .chip / .link-btn 这类通用名已经在 OaView、MonitorOverviewView 等
+ *   多个页面的 scoped 样式里各自定义了一份，无前缀地提到全局会串味、改动别的页面外观。
+ */
+
+/* ------------------------------------------------------------------ *
+ * 徽标
+ * ------------------------------------------------------------------ */
+.sa-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 650;
+  background: var(--deploy-muted);
+  color: var(--deploy-fg-secondary);
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+.sa-chip--joined {
+  background: #dcfce7;
+  color: #15803d;
+}
+.sa-chip--owner {
+  background: #e0e7ff;
+  color: #4338ca;
+}
+.sa-chip--muted {
+  color: var(--deploy-muted-fg);
+}
+.sa-chip--warn {
+  background: #fef3c7;
+  color: #b45309;
+}
+.sa-chip--open {
+  background: #e0f2fe;
+  color: #0369a1;
+}
+.sa-chip--status-running {
+  background: #e0f2fe;
+  color: #0369a1;
+}
+.sa-chip--status-success {
+  background: #dcfce7;
+  color: #15803d;
+}
+.sa-chip--status-failed {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+.sa-chip--status-timeout {
+  background: #fef3c7;
+  color: #b45309;
+}
+.sa-chip--status-canceled,
+.sa-chip--status-interrupted {
+  background: var(--deploy-muted);
+  color: var(--deploy-muted-fg);
+}
+
+/** 执行中的呼吸点 */
+.sa-live-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #0284c7;
+  animation: sa-pulse 1.2s ease-in-out infinite;
+}
+@keyframes sa-pulse {
+  50% {
+    opacity: 0.25;
+  }
+}
+
+/* ------------------------------------------------------------------ *
+ * 文字按钮 / 图标按钮
+ * ------------------------------------------------------------------ */
+.sa-link {
+  border: none;
+  background: transparent;
+  padding: 4px 6px;
+  border-radius: 6px;
+  font-size: 12.5px;
+  font-family: inherit;
+  color: var(--deploy-fg-secondary);
+  cursor: pointer;
+  white-space: nowrap;
+}
+.sa-link:hover:not(:disabled) {
+  background: var(--deploy-muted);
+  color: var(--deploy-fg);
+}
+.sa-link--danger {
+  color: #b91c1c;
+}
+.sa-link--danger:hover:not(:disabled) {
+  background: #fef2f2;
+  color: #b91c1c;
+}
+.sa-link--sm {
+  font-size: 11.5px;
+  padding: 2px 6px;
+}
+.sa-link:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.sa-icon-btn {
+  border: 1px solid var(--deploy-border);
+  background: var(--deploy-card);
+  border-radius: 6px;
+  width: 24px;
+  height: 24px;
+  line-height: 1;
+  cursor: pointer;
+  color: var(--deploy-fg-secondary);
+  font-family: inherit;
+}
+.sa-icon-btn:hover:not(:disabled) {
+  border-color: var(--deploy-border-strong);
+  color: var(--deploy-fg);
+}
+.sa-icon-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* ------------------------------------------------------------------ *
+ * 面板
+ * ------------------------------------------------------------------ */
+.sa-panel {
+  background: var(--deploy-card);
+  border: 1px solid var(--deploy-border);
+  border-radius: var(--deploy-radius-lg);
+  padding: 14px;
+}
+.sa-panel--empty {
+  font-size: 13px;
+  color: var(--deploy-fg-secondary);
+  margin: 0;
+}
+.sa-panel__title {
+  margin: 0 0 10px;
+  font-size: 12px;
+  font-weight: 650;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--deploy-muted-fg);
+}
+.sa-panel__title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.sa-panel__title-row .sa-panel__title {
+  margin-bottom: 10px;
+}
+
+/* ------------------------------------------------------------------ *
+ * 输入框
+ * ------------------------------------------------------------------ */
+.sa-input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 7px 10px;
+  border: 1px solid var(--deploy-border-strong);
+  border-radius: var(--deploy-radius);
+  background: var(--deploy-card);
+  font-size: 13px;
+  font-family: inherit;
+  color: var(--deploy-fg);
+}
+.sa-input--mono {
+  font-family: var(--deploy-mono);
+  font-size: 12.5px;
+}
+.sa-input:focus {
+  outline: 2px solid var(--deploy-accent-soft);
+  border-color: var(--deploy-accent);
+}
+
+/* ------------------------------------------------------------------ *
+ * 命令一行（详情页 / 编辑弹窗里的命令摘要）
+ * ------------------------------------------------------------------ */
+.sa-cmd-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+.sa-cmd-row__name {
+  flex-shrink: 0;
+  font-size: 12.5px;
+  font-weight: 650;
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: var(--deploy-card);
+  border: 1px solid var(--deploy-border);
+}
+.sa-cmd-row__text {
+  font-family: var(--deploy-mono);
+  font-size: 12px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--deploy-fg-secondary);
+}
+.sa-cmd-row__params {
+  margin-left: auto;
+  font-size: 11px;
+  color: var(--deploy-muted-fg);
+  flex-shrink: 0;
+}
+.sa-cmd-empty {
+  margin: 0;
+  font-size: 12px;
+  color: var(--deploy-muted-fg);
+}
+
+/* 行内代码片段：目录、命令这类需要等宽显示的值 */
+.sa-code {
+  font-family: var(--deploy-mono);
+  font-size: 12px;
+  background: var(--deploy-muted);
+  padding: 1px 5px;
+  border-radius: 5px;
+}
