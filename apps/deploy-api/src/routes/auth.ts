@@ -39,13 +39,19 @@ function hitSsoRateLimit(ip: string): boolean {
   return rec.count > SSO_RATE_LIMIT;
 }
 
+/** Cookie 改名期双读名单：先新名 unisso_sid，为空再读旧名 sse_sso */
+const SSO_COOKIE_NAMES = ['unisso_sid', 'sse_sso'];
+
 function readSsoCookie(req: { headers: Record<string, unknown> }): string {
   const raw = String(req.headers.cookie || '');
-  for (const part of raw.split(';')) {
-    const idx = part.indexOf('=');
-    if (idx < 0) continue;
-    if (part.slice(0, idx).trim() === 'sse_sso') {
-      return decodeURIComponent(part.slice(idx + 1).trim());
+  for (const name of SSO_COOKIE_NAMES) {
+    for (const part of raw.split(';')) {
+      const idx = part.indexOf('=');
+      if (idx < 0) continue;
+      if (part.slice(0, idx).trim() === name) {
+        const value = decodeURIComponent(part.slice(idx + 1).trim());
+        if (value) return value;
+      }
     }
   }
   return '';
@@ -59,10 +65,13 @@ function setSsoCookie(res: { append: (k: string, v: string) => void }, ticket: S
 }
 
 function clearSsoCookie(res: { append: (k: string, v: string) => void }) {
-  res.append(
-    'Set-Cookie',
-    'sse_sso=; Domain=.ssemarket.cn; Path=/; Max-Age=0; HttpOnly; Secure; SameSite=Lax'
-  );
+  // 改名期双清：新旧两个名字都按父域清除
+  for (const name of SSO_COOKIE_NAMES) {
+    res.append(
+      'Set-Cookie',
+      `${name}=; Domain=.ssemarket.cn; Path=/; Max-Age=0; HttpOnly; Secure; SameSite=Lax`
+    );
+  }
 }
 
 function mapUser(user: NonNullable<ReturnType<typeof getUserById>>) {
