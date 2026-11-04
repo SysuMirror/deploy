@@ -401,10 +401,13 @@ export const api = {
   },
   /** 静默 SSO：带共享父域 Cookie 换本地会话，失败由调用方静默回落登录表单 */
   ssoTry() {
+    // 8s 超时：探测挂起不能让路由守卫（router.isReady 才 mount）挂死整页
+    const ac = new AbortController();
+    const timer = setTimeout(() => ac.abort(), 8000);
     return request<{ token: string; expiresAt: string; user: SessionUser; isDeveloper: boolean }>(
       '/auth/sso/try',
-      { method: 'POST' }
-    );
+      { method: 'POST', signal: ac.signal }
+    ).finally(() => clearTimeout(timer));
   },
   getMe() {
     return request<{ user: SessionUser }>('/auth/me');

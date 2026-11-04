@@ -29,28 +29,40 @@ export const useAuthStore = defineStore('auth', () => {
   let ssoChecked = false;
   let ssoInflight: Promise<SsoCheck> | null = null;
 
+  async function probeSsoOnce(): Promise<{ state: SsoCheck; retryable: boolean }> {
+    try {
+      const { token, user: u } = await api.ssoTry();
+      persistAuth(token, u);
+      user.value = u;
+      return { state: 'ok' as const, retryable: false };
+    } catch (e) {
+      if (e instanceof NotDeveloperError) {
+        return { state: 'not-developer' as const, retryable: false };
+      }
+      const status = e instanceof ApiError ? e.status : 0;
+      if (status === 401) {
+        clearPersistedAuth();
+        user.value = null;
+        return { state: 'invalid' as const, retryable: false };
+      }
+      // 429 契约明确不自动重试；其余不可达类错误（超时/断连/5xx）允许重试一次
+      return { state: 'unavailable' as const, retryable: status !== 429 };
+    }
+  }
+
   async function revalidateSso(): Promise<SsoCheck> {
     if (ssoInflight) return ssoInflight;
     if (ssoChecked) return getToken() ? 'ok' : 'invalid';
     ssoInflight = (async () => {
-      try {
-        const { token, user: u } = await api.ssoTry();
-        persistAuth(token, u);
-        user.value = u;
-        return 'ok' as const;
-      } catch (e) {
-        if (e instanceof NotDeveloperError) return 'not-developer' as const;
-        const status = e instanceof ApiError ? e.status : 0;
-        if (status === 401) {
-          clearPersistedAuth();
-          user.value = null;
-          return 'invalid' as const;
-        }
-        return 'unavailable' as const;
-      } finally {
-        ssoChecked = true;
-        ssoInflight = null;
+      let r = await probeSsoOnce();
+      if (r.state === 'unavailable' && r.retryable) {
+        // 冷启动首连偶发挂起/断连：短退避重试一次，不让用户被迫手动刷新
+        await new Promise((resolve) => setTimeout(resolve, 600));
+        r = await probeSsoOnce();
       }
+      ssoChecked = true;
+      ssoInflight = null;
+      return r.state;
     })();
     return ssoInflight;
   }
